@@ -1,13 +1,29 @@
+from contextlib import asynccontextmanager
 from typing import Annotated
 
 import uvicorn
 from fastapi import FastAPI, HTTPException, Depends
-from sqlalchemy import select
+from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
+from uvicorn import lifespan
 
-from Shemas.CharacterShema import Base, CharacterAddShema, CharacterModel
+from Shemas.CharacterShema import Base, CharacterAddShema, CharacterModel, Battle
+from database.hello_count import hello_count_players, bye_count_players
 
-app = FastAPI()
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    print(f'{'Запуск приложения':-^100}')
+    async with new_session() as session:
+        count = await hello_count_players(session)
+        print(f'К бою готовы {count} игроков')
+    yield
+    print(f'{'Выключение':-^100}')
+    async with new_session() as session:
+        count = await bye_count_players(session)
+        print(f'В живых осталось {count} игроков')
+
+app = FastAPI(lifespan=lifespan)
 
 engine = create_async_engine('sqlite+aiosqlite:///database/characters.db')
 
@@ -56,6 +72,25 @@ async def get_character(session: SessionDep, character_id: int):
     query = select(CharacterModel).where(CharacterModel.id == character_id)
     result = await session.execute(query)
     return result.scalars().first()
+
+@app.post('/battle', tags=['BATTLE'])
+async def battle(session: SessionDep, data: Annotated[Battle, Depends()]):
+    query_damage = select(CharacterModel.damage).where(CharacterModel.id == data.id_self)
+    result_damage = await session.execute(query_damage)
+    damage_value = result_damage.scalar()
+    query_target_health = (
+        select(CharacterModel.health).
+        where(CharacterModel.id == data.id_target))
+    result_target_health = await session.execute(query_target_health)
+    target_health = result_target_health.scalar()
+    target_health -= damage_value
+    query_update = (
+        update(CharacterModel)
+        .where(CharacterModel.id == data.id_target)
+        .values(health=target_health))
+    await session.execute(query_update)
+    await session.commit()
+    return f'пользователь {data.id_self} нанес {damage_value} урона пользователю {data.id_target}'
 
 # if __name__ == '__main__':
 #     uvicorn.run("main:app", reload=True)

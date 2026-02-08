@@ -30,6 +30,11 @@ class CharacterAddShema(BaseModel):
     name: str
     char_class: CharacterClassChoice
 
+
+class Battle(BaseModel):
+    id_self: str
+    id_target: str
+
 jopass = CharacterModel(
     name='Jopass',
     char_class=CharacterClassChoice.WARRIOR
