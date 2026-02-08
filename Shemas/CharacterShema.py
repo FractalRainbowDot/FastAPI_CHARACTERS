@@ -35,8 +35,3 @@ class Battle(BaseModel):
     id_self: str
     id_target: str
 
-jopass = CharacterModel(
-    name='Jopass',
-    char_class=CharacterClassChoice.WARRIOR
-)
-print(jopass.char_class)

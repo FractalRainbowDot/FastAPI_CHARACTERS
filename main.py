@@ -8,6 +8,7 @@ from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, Asyn
 from uvicorn import lifespan
 
 from Shemas.CharacterShema import Base, CharacterAddShema, CharacterModel, Battle
+from battle.do_damage import do_damage
 from database.hello_count import hello_count_players, bye_count_players
 
 
@@ -62,7 +63,7 @@ async def add_character_to_db(
 
 @app.get('/all_characters', tags=['DATABASE'])
 async def show_characters(session: SessionDep):
-    query = select(CharacterModel)
+    query = select(CharacterModel).order_by(CharacterModel.id)
     result = await session.execute(query)
     return result.scalars().all()
 
@@ -75,22 +76,8 @@ async def get_character(session: SessionDep, character_id: int):
 
 @app.post('/battle', tags=['BATTLE'])
 async def battle(session: SessionDep, data: Annotated[Battle, Depends()]):
-    query_damage = select(CharacterModel.damage).where(CharacterModel.id == data.id_self)
-    result_damage = await session.execute(query_damage)
-    damage_value = result_damage.scalar()
-    query_target_health = (
-        select(CharacterModel.health).
-        where(CharacterModel.id == data.id_target))
-    result_target_health = await session.execute(query_target_health)
-    target_health = result_target_health.scalar()
-    target_health -= damage_value
-    query_update = (
-        update(CharacterModel)
-        .where(CharacterModel.id == data.id_target)
-        .values(health=target_health))
-    await session.execute(query_update)
-    await session.commit()
-    return f'пользователь {data.id_self} нанес {damage_value} урона пользователю {data.id_target}'
+    result = await do_damage(session, data)
+    return result
 
 # if __name__ == '__main__':
 #     uvicorn.run("main:app", reload=True)
