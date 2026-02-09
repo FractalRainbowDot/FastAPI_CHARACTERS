@@ -9,16 +9,6 @@ from Shemas.CharacterShema import Base, CharacterAddShema, CharacterModel, Battl
 from battle.do_damage import do_damage
 from battle.heal_all import heal_all
 
-router_battle = APIRouter(
-    prefix='/battle',
-    tags=['BATTLE'],
-)
-
-router_DB = APIRouter(
-    prefix='/battle',
-    tags=['DATABASE'],
-)
-
 engine = create_async_engine('sqlite+aiosqlite:///database/characters.db')
 
 new_session = async_sessionmaker(engine, expire_on_commit=False)
@@ -31,7 +21,17 @@ async def get_session():
 
 SessionDep = Annotated[AsyncSession, Depends(get_session)]
 
+router_battle = APIRouter(
+    prefix='/battle',
+    tags=['BATTLE'],
+)
 
+router_DB = APIRouter(
+    prefix='/battle',
+    tags=['DATABASE'],
+)
+
+"""ДРОПНУТЬ И СОЗДАТЬ БАЗУ ДАННЫХ"""
 @router_DB.post('/create_DB')
 async def setup_db():
     async with engine.begin() as conn:
@@ -39,7 +39,7 @@ async def setup_db():
         await conn.run_sync(Base.metadata.create_all)
     return {'message': 'ZAEBIS'}
 
-
+'''ДОБАВИТЬ ИГРОКА'''
 @router_DB.post('/add_character_to_DB')
 async def add_character_to_db(
         data: Annotated[CharacterAddShema, Depends()],
@@ -54,21 +54,21 @@ async def add_character_to_db(
     await session.commit()
     return {'message': f'Персонажу присвоен ID {new_character.id}'}
 
-
+'''ВСЕ ПЕРСОНАЖИ'''
 @router_DB.get('/all_characters')
 async def show_characters(session: SessionDep):
     query = select(CharacterModel).order_by(CharacterModel.id)
     result = await session.execute(query)
     return result.scalars().all()
 
-
+'''ПЕРСОНАЖ ПО АЙДИ'''
 @router_DB.get('/character_info_by_id')
 async def get_character(session: SessionDep, character_id: int):
     query = select(CharacterModel).where(CharacterModel.id == character_id)
     result = await session.execute(query)
     return result.scalars().first()
 
-
+'''СОВЕРШИТЬ НАСИЛИЕ'''
 @router_battle.post('/do_hit')
 async def battle(
         session: SessionDep,
@@ -77,7 +77,7 @@ async def battle(
     result = await do_damage(session, data)
     return result
 
-
+'''ЗАЛЕЧИТЬ ВСЕХ ЧЕБУРЕКОВ'''
 @router_battle.post('/heal_all')
 async def heal_all_chars(
         session: SessionDep
