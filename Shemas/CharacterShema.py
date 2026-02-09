@@ -17,6 +17,7 @@ class CharacterModel(Base):
     alive: Mapped[bool] = mapped_column(default=True)
     damage: Mapped[int] = mapped_column(default=10)
     armour: Mapped[int] = mapped_column(default=0)
+    # cock_size: Mapped[int] = mapped_column(default=2)
 
 
 class CharacterClassChoice(StrEnum):

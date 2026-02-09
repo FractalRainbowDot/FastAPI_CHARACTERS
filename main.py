@@ -58,8 +58,9 @@ async def add_character_to_db(
         char_class=data.char_class
     )
     session.add(new_character)
+    await session.flush()
     await session.commit()
-    return {'message': 'ZAEBIS'}
+    return {'message': f'Персонажу присвоен ID {new_character.id}'}
 
 
 @app.get('/all_characters', tags=['DATABASE'])
