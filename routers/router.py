@@ -1,13 +1,12 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException
-
-from sqlalchemy import select, delete
+from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
 
-from Shemas.CharacterShema import Base, CharacterAddShema, CharacterModel, Battle, CharacterShow, CharacterDelete
+from Shemas.CharacterShema import Base, CharacterAddShema, Battle, CharacterShow, CharacterDelete
 from battle.do_damage import do_damage
 from battle.heal_all import heal_all
+from database.queries import get_character_by_id, remove_character_from_db, show_characters, add_character_to_db
 
 engine = create_async_engine('sqlite+aiosqlite:///database/characters.db')
 
@@ -32,6 +31,8 @@ router_DB = APIRouter(
 )
 
 """ДРОПНУТЬ И СОЗДАТЬ БАЗУ ДАННЫХ"""
+
+
 @router_DB.post('/create_DB')
 async def setup_db():
     async with engine.begin() as conn:
@@ -39,64 +40,44 @@ async def setup_db():
         await conn.run_sync(Base.metadata.create_all)
     return {'message': 'ZAEBIS'}
 
+
 '''ДОБАВИТЬ ИГРОКА'''
 @router_DB.post('/add_character_to_DB')
-async def add_character_to_db(
-        data: Annotated[CharacterAddShema, Depends()],
-        session: SessionDep
-):
-    new_character = CharacterModel(
-        name=data.name,
-        char_class=data.char_class
-    )
-    session.add(new_character)
-    await session.flush()
-    await session.commit()
-    return {'message': f'Персонажу присвоен ID {new_character.id}'}
+async def add_character(data: Annotated[CharacterAddShema, Depends()], session: SessionDep):
+    result = await add_character_to_db(data, session)
+    return result
+
 
 """УДАЛИТЬ ПЕРСОНАЖА"""
 @router_DB.post('/remove_character_from_DB')
-async def remove_character_from_db(
-        data: Annotated[CharacterDelete, Depends()],
-        session: SessionDep
-):
-    query = delete(CharacterModel).where(CharacterModel.id == data.id)
-    result = await session.execute(query)
-    await session.commit()
-    if result.rowcount == 0:
-        raise HTTPException(status_code=404, detail='Такого персонажа нет')
-    else:
-        return f'Пользователь с ID {data.id} удалён'
-
+async def remove(data: Annotated[CharacterDelete, Depends()], session: SessionDep):
+    result = await remove_character_from_db(data, session)
+    return result
 
 
 '''ВСЕ ПЕРСОНАЖИ'''
 @router_DB.get('/all_characters')
-async def show_characters(session: SessionDep):
-    query = select(CharacterModel).order_by(CharacterModel.id)
-    result = await session.execute(query)
-    return result.scalars().all()
+async def show(session: SessionDep):
+    result = await show_characters(session)
+    return result
+
 
 '''ПЕРСОНАЖ ПО АЙДИ'''
 @router_DB.get('/character_info_by_id')
 async def get_character(session: SessionDep, character_id: int) -> CharacterShow:
-    query = select(CharacterModel).where(CharacterModel.id == character_id)
-    result = await session.execute(query)
-    return result.scalars().first()
+    result = await get_character_by_id(session, character_id)
+    return result
+
 
 '''СОВЕРШИТЬ НАСИЛИЕ'''
 @router_battle.post('/do_hit')
-async def battle(
-        session: SessionDep,
-        data: Annotated[Battle, Depends()]
-):
+async def battle(session: SessionDep, data: Annotated[Battle, Depends()]):
     result = await do_damage(session, data)
     return result
 
+
 '''ЗАЛЕЧИТЬ ВСЕХ ЧЕБУРЕКОВ'''
 @router_battle.post('/heal_all')
-async def heal_all_chars(
-        session: SessionDep
-):
+async def heal_all_chars(session: SessionDep):
     await heal_all(session)
     return {'message': 'ALL HEALED'}

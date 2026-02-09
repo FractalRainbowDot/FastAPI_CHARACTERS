@@ -1,7 +1,6 @@
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from enum import StrEnum
-
 
 class Base(DeclarativeBase):
     pass
@@ -45,8 +44,7 @@ class CharacterClassChoice(StrEnum):
     ROGUE = "rogue"
     CLERIC = "cleric"
 
-
 '''ДЛЯ СОВЕРШЕНИЯ НАСИЛИЯ'''
 class Battle(BaseModel):
-    id_self: str
-    id_target: str
+    id_self: int = Field(ge=0)  # ХОЧУ ВЕРХНЮЮ ГРАНИЦУ COUNT_ID_CHARACTERS
+    id_target: int = Field(ge=0)
