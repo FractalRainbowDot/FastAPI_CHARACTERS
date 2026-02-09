@@ -19,6 +19,15 @@ class CharacterModel(Base):
     armour: Mapped[int] = mapped_column(default=0)
     # cock_size: Mapped[int] = mapped_column(default=2)
 
+class CharacterShow(BaseModel):
+    id: int
+    name: str
+    char_class: str
+    health: int
+    alive: bool
+    damage: int
+    armour: int
+
 
 class CharacterClassChoice(StrEnum):
     WARRIOR = "warrior"

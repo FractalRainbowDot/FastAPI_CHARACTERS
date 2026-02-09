@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
 
-from Shemas.CharacterShema import Base, CharacterAddShema, CharacterModel, Battle
+from Shemas.CharacterShema import Base, CharacterAddShema, CharacterModel, Battle, CharacterShow
 from battle.do_damage import do_damage
 from battle.heal_all import heal_all
 
@@ -63,7 +63,7 @@ async def show_characters(session: SessionDep):
 
 '''ПЕРСОНАЖ ПО АЙДИ'''
 @router_DB.get('/character_info_by_id')
-async def get_character(session: SessionDep, character_id: int):
+async def get_character(session: SessionDep, character_id: int) -> CharacterShow:
     query = select(CharacterModel).where(CharacterModel.id == character_id)
     result = await session.execute(query)
     return result.scalars().first()
