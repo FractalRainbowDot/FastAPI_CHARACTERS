@@ -1,18 +1,25 @@
+from fastapi import HTTPException
 from sqlalchemy import select, update
 
 from Shemas.CharacterShema import CharacterModel
 
 
 async def do_damage(session, data):
+    if data.id_self == data.id_target:
+        raise HTTPException(status_code=403, detail='Одумайся, роскомнадзорнуться на моем бэке не получится')
     query_damage = select(CharacterModel.damage).where(CharacterModel.id == data.id_self)
     result_damage = await session.execute(query_damage)
     damage_value = result_damage.scalar()
+    if damage_value is None:
+        raise HTTPException(status_code=404, detail="Character_self not found")
     query_target_health = (
         select(CharacterModel.health).
         where(CharacterModel.id == data.id_target))
     result_target_health = await session.execute(query_target_health)
     target_health = result_target_health.scalar()
-    if target_health <= 0:
+    if target_health is None:
+        raise HTTPException(status_code=404, detail="Character_target not found")
+    elif target_health <= 0:
         return f'Персонаж уже мертв! Оставь вялый труп в покое...'
     target_health -= damage_value
     if target_health <= 0:

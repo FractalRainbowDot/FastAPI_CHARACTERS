@@ -1,11 +1,11 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 
-from sqlalchemy import select
+from sqlalchemy import select, delete
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
 
-from Shemas.CharacterShema import Base, CharacterAddShema, CharacterModel, Battle, CharacterShow
+from Shemas.CharacterShema import Base, CharacterAddShema, CharacterModel, Battle, CharacterShow, CharacterDelete
 from battle.do_damage import do_damage
 from battle.heal_all import heal_all
 
@@ -53,6 +53,22 @@ async def add_character_to_db(
     await session.flush()
     await session.commit()
     return {'message': f'Персонажу присвоен ID {new_character.id}'}
+
+"""УДАЛИТЬ ПЕРСОНАЖА"""
+@router_DB.post('/remove_character_from_DB')
+async def remove_character_from_db(
+        data: Annotated[CharacterDelete, Depends()],
+        session: SessionDep
+):
+    query = delete(CharacterModel).where(CharacterModel.id == data.id)
+    result = await session.execute(query)
+    await session.commit()
+    if result.rowcount == 0:
+        raise HTTPException(status_code=404, detail='Такого персонажа нет')
+    else:
+        return f'Пользователь с ID {data.id} удалён'
+
+
 
 '''ВСЕ ПЕРСОНАЖИ'''
 @router_DB.get('/all_characters')

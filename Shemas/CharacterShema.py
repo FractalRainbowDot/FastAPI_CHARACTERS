@@ -19,6 +19,7 @@ class CharacterModel(Base):
     armour: Mapped[int] = mapped_column(default=0)
     # cock_size: Mapped[int] = mapped_column(default=2)
 
+
 class CharacterShow(BaseModel):
     id: int
     name: str
@@ -28,6 +29,15 @@ class CharacterShow(BaseModel):
     damage: int
     armour: int
 
+'''НА УДАЛЕНИЕ'''
+class CharacterDelete(BaseModel):
+    id: int
+
+
+"""НА ДОБАВЛЕНИЕ ИГРОКА"""
+class CharacterAddShema(BaseModel):
+    name: str
+    char_class: CharacterClassChoice
 
 class CharacterClassChoice(StrEnum):
     WARRIOR = "warrior"
@@ -36,12 +46,7 @@ class CharacterClassChoice(StrEnum):
     CLERIC = "cleric"
 
 
-class CharacterAddShema(BaseModel):
-    name: str
-    char_class: CharacterClassChoice
-
-
+'''ДЛЯ СОВЕРШЕНИЯ НАСИЛИЯ'''
 class Battle(BaseModel):
     id_self: str
     id_target: str
-
