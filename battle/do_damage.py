@@ -12,6 +12,8 @@ async def do_damage(session, data):
         where(CharacterModel.id == data.id_target))
     result_target_health = await session.execute(query_target_health)
     target_health = result_target_health.scalar()
+    if target_health <= 0:
+        return f'Персонаж уже мертв! Оставь вялый труп в покое...'
     target_health -= damage_value
     if target_health <= 0:
         query = (update(CharacterModel)
