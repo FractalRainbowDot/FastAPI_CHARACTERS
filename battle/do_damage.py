@@ -13,6 +13,11 @@ async def do_damage(session, data):
     result_target_health = await session.execute(query_target_health)
     target_health = result_target_health.scalar()
     target_health -= damage_value
+    if target_health <= 0:
+        query = (update(CharacterModel)
+                 .where(CharacterModel.id == data.id_target)
+                 .values(alive=False))
+        await session.execute(query)
     query_update = (
         update(CharacterModel)
         .where(CharacterModel.id == data.id_target)

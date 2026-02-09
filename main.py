@@ -9,6 +9,7 @@ from uvicorn import lifespan
 
 from Shemas.CharacterShema import Base, CharacterAddShema, CharacterModel, Battle
 from battle.do_damage import do_damage
+from battle.heal_all import heal_all
 from database.hello_count import hello_count_players, bye_count_players
 
 
@@ -78,6 +79,11 @@ async def get_character(session: SessionDep, character_id: int):
 async def battle(session: SessionDep, data: Annotated[Battle, Depends()]):
     result = await do_damage(session, data)
     return result
+
+@app.post('/heal_all', tags=['BATTLE'])
+async def heal_all_chars(session: SessionDep):
+    await heal_all(session)
+    return {'message': 'ALL HEALED'}
 
 # if __name__ == '__main__':
 #     uvicorn.run("main:app", reload=True)
