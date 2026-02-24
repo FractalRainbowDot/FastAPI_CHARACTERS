@@ -1,9 +1,9 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
 
-from Schemas.CharacterSchema import Base, CharacterAddSchema, Battle, CharacterDelete, CharacterReadSchema
+from Schemas.CharacterSchema import Base, CharacterAddSchema, Battle, CharacterDelete, CharacterReadSchema, CharacterModel
 from battle.do_damage import do_damage
 from battle.heal_all import heal_all
 from database.queries import get_character_by_id, remove_character_from_db, show_characters, add_character_to_db
@@ -71,6 +71,16 @@ async def get_character(session: SessionDep, character_id: int) -> CharacterRead
 '''СОВЕРШИТЬ НАСИЛИЕ'''
 @router_battle.post('/do_hit')
 async def battle(session: SessionDep, data: Annotated[Battle, Depends()]):
+    # Проверяем, существует ли атакующий
+    attacker = await session.get(CharacterModel, data.id_self)
+    if not attacker:
+        raise HTTPException(status_code=404, detail=f"Атакующий с ID {data.id_self} не найден")
+
+    # Проверяем, существует ли цель
+    target = await session.get(CharacterModel, data.id_target)
+    if not target:
+        raise HTTPException(status_code=404, detail=f"Цель с ID {data.id_target} не найдена")
+
     result = await do_damage(session, data)
     return result
 

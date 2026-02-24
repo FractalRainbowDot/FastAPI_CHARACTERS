@@ -58,5 +58,5 @@ class CharacterAddSchema(BaseModel):
 
 '''ДЛЯ СОВЕРШЕНИЯ НАСИЛИЯ'''
 class Battle(BaseModel):
-    id_self: int = Field(ge=0)  # ХОЧУ ВЕРХНЮЮ ГРАНИЦУ COUNT_ID_CHARACTERS
-    id_target: int = Field(ge=0)
+    id_self: int = Field(gt=0)
+    id_target: int = Field(gt=0)
