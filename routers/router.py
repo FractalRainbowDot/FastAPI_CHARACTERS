@@ -3,7 +3,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
 
-from Shemas.CharacterShema import Base, CharacterAddShema, Battle, CharacterShow, CharacterDelete
+from Schemas.CharacterSchema import Base, CharacterAddSchema, Battle, CharacterDelete, CharacterReadSchema
 from battle.do_damage import do_damage
 from battle.heal_all import heal_all
 from database.queries import get_character_by_id, remove_character_from_db, show_characters, add_character_to_db
@@ -33,15 +33,16 @@ router_DB = APIRouter(
 """ДРОПНУТЬ И СОЗДАТЬ БАЗУ ДАННЫХ"""
 @router_DB.post('/create_DB')
 async def setup_db():
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.drop_all)
-        await conn.run_sync(Base.metadata.create_all)
-    return {'message': 'ZAEBIS'}
+    return None
+    # async with engine.begin() as conn:
+    #     await conn.run_sync(Base.metadata.drop_all)
+    #     await conn.run_sync(Base.metadata.create_all)
+    # return {'message': 'ZAEBIS'}
 
 
 '''ДОБАВИТЬ ИГРОКА'''
 @router_DB.post('/add_character_to_DB')
-async def add_character(data: Annotated[CharacterAddShema, Depends()], session: SessionDep):
+async def add_character(data: Annotated[CharacterAddSchema, Depends()], session: SessionDep):
     result = await add_character_to_db(data, session)
     return result
 
@@ -55,14 +56,14 @@ async def remove(data: Annotated[CharacterDelete, Depends()], session: SessionDe
 
 '''ВСЕ ПЕРСОНАЖИ'''
 @router_DB.get('/all_characters')
-async def show(session: SessionDep):
+async def show(session: SessionDep) -> list[CharacterReadSchema]:
     result = await show_characters(session)
     return result
 
 
 '''ПЕРСОНАЖ ПО АЙДИ'''
 @router_DB.get('/character_info_by_id')
-async def get_character(session: SessionDep, character_id: int) -> CharacterShow:
+async def get_character(session: SessionDep, character_id: int) -> CharacterReadSchema:
     result = await get_character_by_id(session, character_id)
     return result
 

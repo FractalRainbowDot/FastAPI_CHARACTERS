@@ -1,7 +1,7 @@
 from fastapi import HTTPException
 from sqlalchemy import select, update
 
-from Shemas.CharacterShema import CharacterModel
+from Schemas.CharacterSchema import CharacterModel
 
 
 async def do_damage(session, data):

@@ -1,6 +1,6 @@
 from sqlalchemy import update
 
-from Shemas.CharacterShema import CharacterModel
+from Schemas.CharacterSchema import CharacterModel
 
 
 async def heal_all(session):

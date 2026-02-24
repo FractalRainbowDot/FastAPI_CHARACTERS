@@ -1,5 +1,5 @@
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 from enum import StrEnum
 
 class Base(DeclarativeBase):
@@ -16,17 +16,28 @@ class CharacterModel(Base):
     alive: Mapped[bool] = mapped_column(default=True)
     damage: Mapped[int] = mapped_column(default=10)
     armour: Mapped[int] = mapped_column(default=0)
-    # cock_size: Mapped[int] = mapped_column(default=2)
+    mana: Mapped[int] = mapped_column(default=100, server_default="100")
 
 
-class CharacterShow(BaseModel):
+"""СХЕМА ДЛЯ ОТДАЧИ ДАННЫХ (READ)"""
+class CharacterReadSchema(BaseModel):
     id: int
     name: str
     char_class: str
-    health: int
     alive: bool
-    damage: int
-    armour: int
+
+    model_config = ConfigDict(
+        from_attributes=True,
+        json_schema_extra={
+            "example": {
+                "id": 1,
+                "name": "Gandalf",
+                "char_class": "mage",
+                "alive": True,
+            }
+        }
+    )
+
 
 '''НА УДАЛЕНИЕ'''
 class CharacterDelete(BaseModel):
@@ -41,7 +52,7 @@ class CharacterClassChoice(StrEnum):
     ROGUE = "rogue"
     CLERIC = "cleric"
 
-class CharacterAddShema(BaseModel):
+class CharacterAddSchema(BaseModel):
     name: str
     char_class: CharacterClassChoice
 
