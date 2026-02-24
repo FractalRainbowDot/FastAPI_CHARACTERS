@@ -1,3 +1,11 @@
-venv
+env/
+venv/
+.env
+.venv
 characters.db
 .idea/
+.Python
+pip-log.txt
+pip-delete-this-directory.txt
+.toast
+.buildpath
