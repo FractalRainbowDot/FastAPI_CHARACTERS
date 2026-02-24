@@ -26,13 +26,11 @@ router_battle = APIRouter(
 )
 
 router_DB = APIRouter(
-    prefix='/battle',
+    prefix='/database',
     tags=['DATABASE'],
 )
 
 """ДРОПНУТЬ И СОЗДАТЬ БАЗУ ДАННЫХ"""
-
-
 @router_DB.post('/create_DB')
 async def setup_db():
     async with engine.begin() as conn:

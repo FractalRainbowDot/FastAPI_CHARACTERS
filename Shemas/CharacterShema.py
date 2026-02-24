@@ -34,15 +34,16 @@ class CharacterDelete(BaseModel):
 
 
 """НА ДОБАВЛЕНИЕ ИГРОКА"""
-class CharacterAddShema(BaseModel):
-    name: str
-    char_class: CharacterClassChoice
 
 class CharacterClassChoice(StrEnum):
     WARRIOR = "warrior"
     MAGE = "mage"
     ROGUE = "rogue"
     CLERIC = "cleric"
+
+class CharacterAddShema(BaseModel):
+    name: str
+    char_class: CharacterClassChoice
 
 '''ДЛЯ СОВЕРШЕНИЯ НАСИЛИЯ'''
 class Battle(BaseModel):

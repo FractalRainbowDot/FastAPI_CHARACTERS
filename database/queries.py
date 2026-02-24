@@ -46,6 +46,5 @@ async def add_character_to_db(data, session):
         char_class=data.char_class
     )
     session.add(new_character)
-    await session.flush()
     await session.commit()
     return {'message': f'Персонажу присвоен ID {new_character.id}'}
