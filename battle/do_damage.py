@@ -46,6 +46,16 @@ async def do_damage(session, data):
 
     log_message += f"Пользователь {data.id_self} нанес {damage_dealt} урона пользователю {data.id_target}. "
 
+    """МЕХАНИКА КОНТРАТАКИ"""
+    if target.health > 0:
+        # Если цель выжила, она бьет в ответ
+        # Урон цели режется об броню изначального атакующего
+        counter_damage_dealt = max(0, target.damage - attacker.armour)
+        attacker.health -= counter_damage_dealt
+        log_message += f"Пользователь {data.id_target} выжил и провел контратаку, нанеся {counter_damage_dealt} урона! "
+    else:
+        log_message += f"Пользователь {data.id_target} был убит этим ударом. "
+
     """Обновление состояния атакующего (ведь он мог потратить ману или отхилиться)"""
     query_update_attacker = (
         update(CharacterModel)

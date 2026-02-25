@@ -33,6 +33,7 @@ router_DB = APIRouter(
 """ДРОПНУТЬ И СОЗДАТЬ БАЗУ ДАННЫХ"""
 @router_DB.post('/create_DB')
 async def setup_db():
+    pass
     # return None
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.drop_all)
