@@ -41,9 +41,18 @@ async def show_characters(session):
 
 
 async def add_character_to_db(data, session):
+    base_armour, base_damage = 0, 10
+
+    if data.char_class == 'warrior':
+        base_armour = 5
+    elif data.char_class == 'cleric':
+        base_damage = 5
+
     new_character = CharacterModel(
         name=data.name,
-        char_class=data.char_class
+        char_class=data.char_class,
+        armour=base_armour,
+        damage=base_damage
     )
     session.add(new_character)
     await session.commit()

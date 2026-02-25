@@ -9,58 +9,58 @@ async def do_damage(session, data):
     if data.id_self == data.id_target:
         raise HTTPException(status_code=403, detail='Одумайся, роскомнадзорнуться на моем бэке не получится')
 
-    """Получаем статы атакующего (Урон и ХП)"""
-    query_attacker = select(CharacterModel.damage, CharacterModel.health).where(CharacterModel.id == data.id_self)
-    result_attacker = await session.execute(query_attacker)
-    attacker_damage, attacker_health = result_attacker.first()
+    # Получаем полные объекты атакующего и цели
+    attacker = await session.get(CharacterModel, data.id_self)
+    target = await session.get(CharacterModel, data.id_target)
 
-    """Получаем статы цели (Урон и ХП)"""
-    query_target = select(CharacterModel.damage, CharacterModel.health).where(CharacterModel.id == data.id_target)
-    result_target = await session.execute(query_target)
-    target_damage, target_health = result_target.first()
+    """Тест на живучесть"""
+    if attacker.health <= 0:
+        return f'Мертвецы не кусаются...'
+    if target.health <= 0:
+        return f'Персонаж уже мертв! Оставь вялый труп в покое...'
 
-    """Тест на живучесть до начала боя"""
-    if attacker_health <= 0:
-        return f'Персонаж {data.id_self} мертв и махать кулаками уже не может...'
-    if target_health <= 0:
-        return f'Персонаж {data.id_target} уже мертв! Оставь вялый труп в покое...'
+    # Базовый урон
+    actual_damage = attacker.damage
+    log_message = ""
 
-    """РАУНД 1: Атакующий бьет цель"""
-    target_health -= attacker_damage
-    target_is_alive = target_health > 0
+    """КЛАССОВЫЕ АБИЛКИ АТАКУЮЩЕГО"""
+    if attacker.char_class == 'mage' and attacker.mana >= 10:
+        actual_damage += 5
+        attacker.mana -= 10
+        log_message += "Маг скастовал заклинание! "
 
-    log_message = f'Пользователь {data.id_self} нанес {attacker_damage} урона. '
+    elif attacker.char_class == 'rogue':
+        actual_damage *= 2
+        log_message += "Вор наносит коварный двойной удар! "
 
-    """РАУНД 2: Ответный удар (если цель выжила)"""
-    attacker_is_alive = True
-    if target_is_alive:
-        attacker_health -= target_damage
-        attacker_is_alive = attacker_health > 0
-        log_message += f'Выживший {data.id_target} дал сдачи на {target_damage} урона! '
+    elif attacker.char_class == 'cleric' and attacker.mana >= 10:
+        attacker.health += 20
+        attacker.mana -= 10
+        log_message += "Клерик подлечился на 20 ХП перед атакой! "
 
-        if not attacker_is_alive:
-            log_message += f'Атакующий {data.id_self} отлетел от ответки...'
-    else:
-        log_message += f'Цель {data.id_target} пала смертью храбрых и не смогла ответить.'
+    """БРОНЯ ЦЕЛИ И РАСЧЕТ УРОНА"""
+    # Урон режется об показатель брони (но не может быть меньше 0)
+    damage_dealt = max(0, actual_damage - target.armour)
+    target.health -= damage_dealt
 
-    """Обновляем состояние цели в БД"""
+    log_message += f"Пользователь {data.id_self} нанес {damage_dealt} урона пользователю {data.id_target}. "
+
+    """Обновление состояния атакующего (ведь он мог потратить ману или отхилиться)"""
+    query_update_attacker = (
+        update(CharacterModel)
+        .where(CharacterModel.id == data.id_self)
+        .values(health=attacker.health, mana=attacker.mana)
+    )
+    await session.execute(query_update_attacker)
+
+    """Обновление состояния цели"""
+    is_alive = target.health > 0
     query_update_target = (
         update(CharacterModel)
         .where(CharacterModel.id == data.id_target)
-        .values(health=target_health, alive=target_is_alive)
+        .values(health=target.health, alive=is_alive)
     )
     await session.execute(query_update_target)
 
-    """Обновляем состояние атакующего в БД (если ему прилетело)"""
-    if target_is_alive:
-        query_update_attacker = (
-            update(CharacterModel)
-            .where(CharacterModel.id == data.id_self)
-            .values(health=attacker_health, alive=attacker_is_alive)
-        )
-        await session.execute(query_update_attacker)
-
-    """Фиксируем изменения"""
     await session.commit()
-
     return log_message

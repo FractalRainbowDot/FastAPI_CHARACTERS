@@ -61,9 +61,9 @@ async def show(session: SessionDep) -> list[CharacterReadSchema]:
     return result
 
 
-'''ПЕРСОНАЖ ПО АЙДИ'''
+'''подробный ПЕРСОНАЖ ПО АЙДИ'''
 @router_DB.get('/character_info_by_id')
-async def get_character(session: SessionDep, character_id: int) -> CharacterReadSchema:
+async def get_character(session: SessionDep, character_id: int):
     result = await get_character_by_id(session, character_id)
     return result
 
