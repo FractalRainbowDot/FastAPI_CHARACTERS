@@ -25,6 +25,7 @@ class CharacterReadSchema(BaseModel):
     name: str
     char_class: str
     alive: bool
+    health: int
 
     model_config = ConfigDict(
         from_attributes=True,
@@ -34,6 +35,7 @@ class CharacterReadSchema(BaseModel):
                 "name": "Gandalf",
                 "char_class": "mage",
                 "alive": True,
+                "health": 100
             }
         }
     )

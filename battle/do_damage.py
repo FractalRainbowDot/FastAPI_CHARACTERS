@@ -9,29 +9,58 @@ async def do_damage(session, data):
     if data.id_self == data.id_target:
         raise HTTPException(status_code=403, detail='Одумайся, роскомнадзорнуться на моем бэке не получится')
 
-    """Получение АТК"""
-    query_damage = select(CharacterModel.damage).where(CharacterModel.id == data.id_self)
-    result_damage = await session.execute(query_damage)
-    damage_value = result_damage.scalar()
+    """Получаем статы атакующего (Урон и ХП)"""
+    query_attacker = select(CharacterModel.damage, CharacterModel.health).where(CharacterModel.id == data.id_self)
+    result_attacker = await session.execute(query_attacker)
+    attacker_damage, attacker_health = result_attacker.first()
 
-    """Получение ХП"""
-    query_target_health = (
-        select(CharacterModel.health).
-        where(CharacterModel.id == data.id_target))
-    result_target_health = await session.execute(query_target_health)
-    target_health = result_target_health.scalar()
+    """Получаем статы цели (Урон и ХП)"""
+    query_target = select(CharacterModel.damage, CharacterModel.health).where(CharacterModel.id == data.id_target)
+    result_target = await session.execute(query_target)
+    target_damage, target_health = result_target.first()
 
-    """Тест на живучесть"""
+    """Тест на живучесть до начала боя"""
+    if attacker_health <= 0:
+        return f'Персонаж {data.id_self} мертв и махать кулаками уже не может...'
     if target_health <= 0:
-        return f'Персонаж уже мертв! Оставь вялый труп в покое...'
-    target_health -= damage_value
+        return f'Персонаж {data.id_target} уже мертв! Оставь вялый труп в покое...'
 
-    """Поминки слабого участника русской общины"""
-    is_alive = target_health > 0
-    query_update = (
+    """РАУНД 1: Атакующий бьет цель"""
+    target_health -= attacker_damage
+    target_is_alive = target_health > 0
+
+    log_message = f'Пользователь {data.id_self} нанес {attacker_damage} урона. '
+
+    """РАУНД 2: Ответный удар (если цель выжила)"""
+    attacker_is_alive = True
+    if target_is_alive:
+        attacker_health -= target_damage
+        attacker_is_alive = attacker_health > 0
+        log_message += f'Выживший {data.id_target} дал сдачи на {target_damage} урона! '
+
+        if not attacker_is_alive:
+            log_message += f'Атакующий {data.id_self} отлетел от ответки...'
+    else:
+        log_message += f'Цель {data.id_target} пала смертью храбрых и не смогла ответить.'
+
+    """Обновляем состояние цели в БД"""
+    query_update_target = (
         update(CharacterModel)
         .where(CharacterModel.id == data.id_target)
-        .values(health=target_health, alive=is_alive))
-    await session.execute(query_update)
+        .values(health=target_health, alive=target_is_alive)
+    )
+    await session.execute(query_update_target)
+
+    """Обновляем состояние атакующего в БД (если ему прилетело)"""
+    if target_is_alive:
+        query_update_attacker = (
+            update(CharacterModel)
+            .where(CharacterModel.id == data.id_self)
+            .values(health=attacker_health, alive=attacker_is_alive)
+        )
+        await session.execute(query_update_attacker)
+
+    """Фиксируем изменения"""
     await session.commit()
-    return f'пользователь {data.id_self} нанес {damage_value} урона пользователю {data.id_target}'
+
+    return log_message
