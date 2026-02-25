@@ -3,7 +3,8 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
 
-from Schemas.CharacterSchema import Base, CharacterAddSchema, Battle, CharacterDelete, CharacterReadSchema, CharacterModel
+from Schemas.CharacterSchema import CharacterAddSchema, Battle, CharacterDelete, CharacterReadSchema, CharacterModel, \
+    Base
 from battle.do_damage import do_damage
 from battle.heal_all import heal_all
 from database.queries import get_character_by_id, remove_character_from_db, show_characters, add_character_to_db
@@ -11,7 +12,6 @@ from database.queries import get_character_by_id, remove_character_from_db, show
 engine = create_async_engine('sqlite+aiosqlite:///database/characters.db')
 
 new_session = async_sessionmaker(engine, expire_on_commit=False)
-
 
 async def get_session():
     async with new_session() as session:
@@ -33,11 +33,11 @@ router_DB = APIRouter(
 """ДРОПНУТЬ И СОЗДАТЬ БАЗУ ДАННЫХ"""
 @router_DB.post('/create_DB')
 async def setup_db():
-    return None
-    # async with engine.begin() as conn:
-    #     await conn.run_sync(Base.metadata.drop_all)
-    #     await conn.run_sync(Base.metadata.create_all)
-    # return {'message': 'ZAEBIS'}
+    # return None
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.drop_all)
+        await conn.run_sync(Base.metadata.create_all)
+    return {'message': 'ZAEBIS'}
 
 
 '''ДОБАВИТЬ ИГРОКА'''
