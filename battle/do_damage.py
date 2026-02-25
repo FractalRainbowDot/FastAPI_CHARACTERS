@@ -29,8 +29,9 @@ async def do_damage(session, data):
         attacker.mana -= 10
         log_message += "Маг скастовал заклинание! "
 
-    elif attacker.char_class == 'rogue':
+    elif attacker.char_class == 'rogue' and attacker.mana >= 10:
         actual_damage *= 2
+        attacker.mana -= 10
         log_message += "Вор наносит коварный двойной удар! "
 
     elif attacker.char_class == 'cleric' and attacker.mana >= 10:
