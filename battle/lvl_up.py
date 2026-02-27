@@ -1,7 +1,12 @@
 from Schemas.CharacterSchema import CharacterModel
 
 
-async def gain_xp(attacker: CharacterModel, damage_dealt: int, target_killed: bool) -> str:
+async def gain_xp(
+        attacker: CharacterModel,
+        target: CharacterModel,
+        damage_dealt: int,
+        target_killed: bool
+) -> str:
     log_msg = ""
 
     # Базовый опыт за урон (10% от урона)
@@ -11,7 +16,7 @@ async def gain_xp(attacker: CharacterModel, damage_dealt: int, target_killed: bo
 
     # Бонус за убийство
     if target_killed:
-        kill_bonus = 50
+        kill_bonus = 10 * target.level
         attacker.experience += kill_bonus
         log_msg += f"Бонус за убийство: {kill_bonus} XP. "
 
@@ -23,7 +28,8 @@ async def gain_xp(attacker: CharacterModel, damage_dealt: int, target_killed: bo
 
         # Прирост характеристик
         attacker.damage += 5
-        attacker.current_health = 100  # Полное исцеление при повышении уровня
+        attacker.max_health += 15
+        attacker.current_health = attacker.max_health  # Полное исцеление при повышении уровня
 
         log_msg += f"** ПОВЫШЕНИЕ УРОВНЯ! Теперь уровень: {attacker.level}. Характеристики улучшены! **"
 

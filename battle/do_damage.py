@@ -2,6 +2,7 @@ from fastapi import HTTPException
 from sqlalchemy import select, update
 
 from Schemas.CharacterSchema import CharacterModel
+from battle.lvl_up import gain_xp
 
 
 async def do_damage(session, data):
@@ -35,43 +36,46 @@ async def do_damage(session, data):
         log_message += "Вор наносит коварный двойной удар! "
 
     elif attacker.char_class == 'cleric' and attacker.mana >= 10:
-        attacker.current_health += 20
-        attacker.mana -= 10
-        log_message += "Клерик подлечился на 20 ХП перед атакой! "
+        if (c_hel := (attacker.current_health + 20)) <= attacker.max_health:
+            attacker.mana -= 10
+            attacker.current_health = c_hel
+            log_message += "Клерик подлечился на 20 ХП перед атакой! "
 
     """БРОНЯ ЦЕЛИ И РАСЧЕТ УРОНА"""
-    # Урон режется об показатель брони (но не может быть меньше 0)
     damage_dealt = max(0, actual_damage - target.armour)
     target.current_health -= damage_dealt
 
     log_message += f"Пользователь {data.id_self} нанес {damage_dealt} урона пользователю {data.id_target}. "
 
+    """МЕХАНИКА ОПЫТА"""
+    is_killed = target.health <= 0
+    xp_log = await gain_xp(attacker, target, damage_dealt, is_killed)
+    log_message += f"Пользователь {data.id_self} нанес {damage_dealt} урона. {xp_log} "
+
     """МЕХАНИКА КОНТРАТАКИ"""
-    if target.current_health > 0:
-        # Если цель выжила, она бьет в ответ
-        # Урон цели режется об броню изначального атакующего
-        counter_damage_dealt = max(0, target.damage - attacker.armour)
-        attacker.current_health -= counter_damage_dealt
-        log_message += f"Пользователь {data.id_target} выжил и провел контратаку, нанеся {counter_damage_dealt} урона! "
+    if not is_killed:
+        counter_damage = max(0, target.damage - attacker.armour)
+        attacker.health -= counter_damage
+        log_message += f"Контратака на {counter_damage} урона! "
     else:
-        log_message += f"Пользователь {data.id_target} был убит этим ударом. "
+        log_message += f"Пользователь {data.id_target} пал в бою. "
 
-    """Обновление состояния атакующего (ведь он мог потратить ману или отхилиться)"""
-    query_update_attacker = (
+    await session.execute(
         update(CharacterModel)
-        .where(CharacterModel.id == data.id_self)
-        .values(health=attacker.current_health, mana=attacker.mana)
+        .where(CharacterModel.id == attacker.id)
+        .values(
+            current_health=attacker.current_health,
+            mana=attacker.mana,
+            experience=attacker.experience,
+            level=attacker.level,
+            damage=attacker.damage
+        )
     )
-    await session.execute(query_update_attacker)
-
-    """Обновление состояния цели"""
-    is_alive = target.current_health > 0
-    query_update_target = (
+    await session.execute(
         update(CharacterModel)
-        .where(CharacterModel.id == data.id_target)
-        .values(health=target.current_health, alive=is_alive)
+        .where(CharacterModel.id == target.id)
+        .values(current_health=target.current_health, alive=(target.current_health > 0))
     )
-    await session.execute(query_update_target)
 
     await session.commit()
     return log_message
