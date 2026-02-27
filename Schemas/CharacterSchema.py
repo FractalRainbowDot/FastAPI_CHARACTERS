@@ -17,7 +17,8 @@ class CharacterModel(Base):
     damage: Mapped[int] = mapped_column(default=10)
     armour: Mapped[int] = mapped_column(default=0)
     mana: Mapped[int] = mapped_column(default=100, server_default="100")
-
+    level: Mapped[int] = mapped_column(default=1, server_default="1")
+    experience: Mapped[int] = mapped_column(default=0, server_default="0")
 
 """СХЕМА ДЛЯ ОТДАЧИ ДАННЫХ (READ)"""
 class CharacterReadSchema(BaseModel):
@@ -26,6 +27,8 @@ class CharacterReadSchema(BaseModel):
     char_class: str
     alive: bool
     health: int
+    level: int
+    experience: int
 
     model_config = ConfigDict(
         from_attributes=True,
@@ -35,7 +38,9 @@ class CharacterReadSchema(BaseModel):
                 "name": "Gandalf",
                 "char_class": "mage",
                 "alive": True,
-                "health": 100
+                "health": 100,
+                "level": 1,
+                "experience": 0,
             }
         }
     )
