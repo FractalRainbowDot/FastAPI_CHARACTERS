@@ -10,7 +10,7 @@ async def gain_xp(
     log_msg = ""
 
     # Базовый опыт за урон (10% от урона)
-    xp_gained = damage_dealt * 0.1
+    xp_gained = damage_dealt // 10
     attacker.experience += xp_gained
     log_msg += f"Получено {xp_gained} XP за удар. "
 
