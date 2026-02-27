@@ -48,14 +48,14 @@ async def do_damage(session, data):
     log_message += f"Пользователь {data.id_self} нанес {damage_dealt} урона пользователю {data.id_target}. "
 
     """МЕХАНИКА ОПЫТА"""
-    is_killed = target.health <= 0
+    is_killed = target.current_health <= 0
     xp_log = await gain_xp(attacker, target, damage_dealt, is_killed)
     log_message += f"Пользователь {data.id_self} нанес {damage_dealt} урона. {xp_log} "
 
     """МЕХАНИКА КОНТРАТАКИ"""
     if not is_killed:
         counter_damage = max(0, target.damage - attacker.armour)
-        attacker.health -= counter_damage
+        attacker.current_health -= counter_damage
         log_message += f"Контратака на {counter_damage} урона! "
     else:
         log_message += f"Пользователь {data.id_target} пал в бою. "
