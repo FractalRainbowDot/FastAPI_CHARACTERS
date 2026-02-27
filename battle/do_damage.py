@@ -25,19 +25,19 @@ async def do_damage(session, data):
     log_message = ""
 
     """КЛАССОВЫЕ АБИЛКИ АТАКУЮЩЕГО"""
-    if attacker.char_class == 'mage' and attacker.mana >= 10:
+    if attacker.char_class == 'mage' and attacker.current_mana >= 10:
         actual_damage += 5
-        attacker.mana -= 10
+        attacker.current_mana -= 10
         log_message += "Маг скастовал заклинание! "
 
-    elif attacker.char_class == 'rogue' and attacker.mana >= 10:
+    elif attacker.char_class == 'rogue' and attacker.current_mana >= 10:
         actual_damage *= 2
-        attacker.mana -= 10
+        attacker.current_mana -= 10
         log_message += "Вор наносит коварный двойной удар! "
 
-    elif attacker.char_class == 'cleric' and attacker.mana >= 10:
+    elif attacker.char_class == 'cleric' and attacker.current_mana >= 10:
         if (c_hel := (attacker.current_health + 20)) <= attacker.max_health:
-            attacker.mana -= 10
+            attacker.current_mana -= 10
             attacker.current_health = c_hel
             log_message += "Клерик подлечился на 20 ХП перед атакой! "
 
@@ -65,7 +65,7 @@ async def do_damage(session, data):
         .where(CharacterModel.id == attacker.id)
         .values(
             current_health=attacker.current_health,
-            mana=attacker.mana,
+            current_mana=attacker.current_mana,
             experience=attacker.experience,
             level=attacker.level,
             damage=attacker.damage

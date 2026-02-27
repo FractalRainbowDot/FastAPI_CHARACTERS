@@ -17,7 +17,8 @@ class CharacterModel(Base):
     alive: Mapped[bool] = mapped_column(default=True)
     damage: Mapped[int] = mapped_column(default=10)
     armour: Mapped[int] = mapped_column(default=0)
-    mana: Mapped[int] = mapped_column(default=100, server_default="100")
+    current_mana: Mapped[int] = mapped_column(default=100, server_default="100")
+    max_mana: Mapped[int] = mapped_column(default=100, server_default="100")
     level: Mapped[int] = mapped_column(default=1, server_default="1")
     experience: Mapped[int] = mapped_column(default=0, server_default="0")
 
@@ -27,7 +28,10 @@ class CharacterReadSchema(BaseModel):
     name: str
     char_class: str
     alive: bool
-    health: int
+    current_health: int
+    max_health: int
+    current_mana: int
+    max_mana: int
     level: int
     experience: int
 
@@ -39,7 +43,10 @@ class CharacterReadSchema(BaseModel):
                 "name": "Gandalf",
                 "char_class": "mage",
                 "alive": True,
-                "health": 100,
+                "current_health": 100,
+                "max_health": 100,
+                "current_mana": 100,
+                "max_mana": 100,
                 "level": 1,
                 "experience": 0,
             }

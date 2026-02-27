@@ -29,7 +29,9 @@ async def gain_xp(
         # Прирост характеристик
         attacker.damage += 5
         attacker.max_health += 15
+        attacker.max_mana += 10
         attacker.current_health = attacker.max_health  # Полное исцеление при повышении уровня
+        attacker.current_mana = attacker.max_mana
 
         log_msg += f"** ПОВЫШЕНИЕ УРОВНЯ! Теперь уровень: {attacker.level}. Характеристики улучшены! **"
 
