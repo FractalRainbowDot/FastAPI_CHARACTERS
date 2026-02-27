@@ -14,9 +14,9 @@ async def do_damage(session, data):
     target = await session.get(CharacterModel, data.id_target)
 
     """Тест на живучесть"""
-    if attacker.health <= 0:
+    if attacker.current_health <= 0:
         return f'Мертвецы не кусаются...'
-    if target.health <= 0:
+    if target.current_health <= 0:
         return f'Персонаж уже мертв! Оставь вялый труп в покое...'
 
     # Базовый урон
@@ -35,23 +35,23 @@ async def do_damage(session, data):
         log_message += "Вор наносит коварный двойной удар! "
 
     elif attacker.char_class == 'cleric' and attacker.mana >= 10:
-        attacker.health += 20
+        attacker.current_health += 20
         attacker.mana -= 10
         log_message += "Клерик подлечился на 20 ХП перед атакой! "
 
     """БРОНЯ ЦЕЛИ И РАСЧЕТ УРОНА"""
     # Урон режется об показатель брони (но не может быть меньше 0)
     damage_dealt = max(0, actual_damage - target.armour)
-    target.health -= damage_dealt
+    target.current_health -= damage_dealt
 
     log_message += f"Пользователь {data.id_self} нанес {damage_dealt} урона пользователю {data.id_target}. "
 
     """МЕХАНИКА КОНТРАТАКИ"""
-    if target.health > 0:
+    if target.current_health > 0:
         # Если цель выжила, она бьет в ответ
         # Урон цели режется об броню изначального атакующего
         counter_damage_dealt = max(0, target.damage - attacker.armour)
-        attacker.health -= counter_damage_dealt
+        attacker.current_health -= counter_damage_dealt
         log_message += f"Пользователь {data.id_target} выжил и провел контратаку, нанеся {counter_damage_dealt} урона! "
     else:
         log_message += f"Пользователь {data.id_target} был убит этим ударом. "
@@ -60,16 +60,16 @@ async def do_damage(session, data):
     query_update_attacker = (
         update(CharacterModel)
         .where(CharacterModel.id == data.id_self)
-        .values(health=attacker.health, mana=attacker.mana)
+        .values(health=attacker.current_health, mana=attacker.mana)
     )
     await session.execute(query_update_attacker)
 
     """Обновление состояния цели"""
-    is_alive = target.health > 0
+    is_alive = target.current_health > 0
     query_update_target = (
         update(CharacterModel)
         .where(CharacterModel.id == data.id_target)
-        .values(health=target.health, alive=is_alive)
+        .values(health=target.current_health, alive=is_alive)
     )
     await session.execute(query_update_target)
 

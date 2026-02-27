@@ -12,7 +12,8 @@ class CharacterModel(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     name: Mapped[str]
     char_class: Mapped[str]
-    health: Mapped[int] = mapped_column(default=100)
+    current_health: Mapped[int] = mapped_column(default=100)
+    max_health: Mapped[int] = mapped_column(default=100, server_default="100")
     alive: Mapped[bool] = mapped_column(default=True)
     damage: Mapped[int] = mapped_column(default=10)
     armour: Mapped[int] = mapped_column(default=0)
