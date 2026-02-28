@@ -60,7 +60,6 @@ class CharacterDelete(BaseModel):
 
 
 """НА ДОБАВЛЕНИЕ ИГРОКА"""
-
 class CharacterClassChoice(StrEnum):
     WARRIOR = "warrior"
     MAGE = "mage"
@@ -75,3 +74,7 @@ class CharacterAddSchema(BaseModel):
 class Battle(BaseModel):
     id_self: int = Field(gt=0)
     id_target: int = Field(gt=0)
+
+class DamageData(BaseModel):
+    id_self: int
+    id_target: int

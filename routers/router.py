@@ -3,10 +3,11 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
 
-from Schemas.CharacterSchema import CharacterAddSchema, Battle, CharacterDelete, CharacterReadSchema, CharacterModel, \
-    Base
+from Schemas.CharacterSchema import CharacterAddSchema, CharacterDelete, CharacterReadSchema, CharacterModel, \
+    Base, DamageData
 from battle.do_damage import do_damage
 from battle.heal_all import heal_all
+from battle.pve_battle import fight_creep
 from database.queries import get_character_by_id, remove_character_from_db, show_characters, add_character_to_db
 
 engine = create_async_engine('sqlite+aiosqlite:///database/characters.db')
@@ -33,8 +34,6 @@ router_DB = APIRouter(
 """ДРОПНУТЬ И СОЗДАТЬ БАЗУ ДАННЫХ"""
 @router_DB.post('/create_DB')
 async def setup_db():
-    pass
-    # return None
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.drop_all)
         await conn.run_sync(Base.metadata.create_all)
@@ -69,20 +68,11 @@ async def get_character(session: SessionDep, character_id: int):
     return result
 
 
-'''СОВЕРШИТЬ НАСИЛИЕ'''
+'''СРАЖЕНИЕ ДВУХ ИГРОКОВ'''
 @router_battle.post('/do_hit')
-async def battle(session: SessionDep, data: Annotated[Battle, Depends()]):
-    # Проверяем, существует ли атакующий
-    attacker = await session.get(CharacterModel, data.id_self)
-    if not attacker:
-        raise HTTPException(status_code=404, detail=f"Атакующий с ID {data.id_self} не найден")
-
-    # Проверяем, существует ли цель
-    target = await session.get(CharacterModel, data.id_target)
-    if not target:
-        raise HTTPException(status_code=404, detail=f"Цель с ID {data.id_target} не найдена")
-
+async def battle(session: SessionDep, data: DamageData):
     result = await do_damage(session, data)
+    await session.commit() # Завершаем транзакцию здесь
     return result
 
 
@@ -91,3 +81,14 @@ async def battle(session: SessionDep, data: Annotated[Battle, Depends()]):
 async def heal_all_chars(session: SessionDep):
     await heal_all(session)
     return {'message': 'ALL HEALED'}
+
+
+'''СРАЗИТЬСЯ С КРИПОМ'''
+@router_battle.post('/fight_creep/{attacker_id}')
+async def pve_fight_endpoint(attacker_id: int, session: SessionDep):
+    attacker = await session.get(CharacterModel, attacker_id)
+    if not attacker:
+        raise HTTPException(status_code=404, detail=f"Игрок с ID {attacker_id} не найден")
+
+    result = await fight_creep(session, attacker_id)
+    return result

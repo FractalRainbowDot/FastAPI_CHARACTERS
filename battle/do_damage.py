@@ -1,81 +1,45 @@
 from fastapi import HTTPException
-from sqlalchemy import select, update
-
-from Schemas.CharacterSchema import CharacterModel
+from Schemas.CharacterSchema import CharacterModel, DamageData
 from battle.lvl_up import gain_xp
+from battle.battle_logic import apply_class_abilities, handle_counter_attack, update_character_stats, are_characters_alive
+from battle.battle_logger import BattleLogger
 
-
-async def do_damage(session, data):
-    """Тест на дурика"""
+async def do_damage(session, data: DamageData):
+    """Координирует бой между двумя персонажами с блокировкой строк для избежания race condition."""
     if data.id_self == data.id_target:
         raise HTTPException(status_code=403, detail='Одумайся, роскомнадзорнуться на моем бэке не получится')
 
-    # Получаем полные объекты атакующего и цели
-    attacker = await session.get(CharacterModel, data.id_self)
-    target = await session.get(CharacterModel, data.id_target)
+    # БЛОКИРУЕМ строки атакующего и цели для эксклюзивного доступа
+    attacker = await session.get(CharacterModel, data.id_self, with_for_update=True)
+    target = await session.get(CharacterModel, data.id_target, with_for_update=True)
 
-    """Тест на живучесть"""
-    if attacker.current_health <= 0:
-        return f'Мертвецы не кусаются...'
-    if target.current_health <= 0:
-        return f'Персонаж уже мертв! Оставь вялый труп в покое...'
+    if not attacker:
+        raise HTTPException(status_code=404, detail=f"Атакующий с ID {data.id_self} не найден")
+    if not target:
+        raise HTTPException(status_code=404, detail=f"Цель с ID {data.id_target} не найдена")
 
-    # Базовый урон
-    actual_damage = attacker.damage
-    log_message = ""
+    if message := are_characters_alive(attacker, target):
+        return message
 
-    """КЛАССОВЫЕ АБИЛКИ АТАКУЮЩЕГО"""
-    if attacker.char_class == 'mage' and attacker.current_mana >= 10:
-        actual_damage += 5
-        attacker.current_mana -= 10
-        log_message += "Маг скастовал заклинание! "
+    logger = BattleLogger()
 
-    elif attacker.char_class == 'rogue' and attacker.current_mana >= 10:
-        actual_damage *= 2
-        attacker.current_mana -= 10
-        log_message += "Вор наносит коварный двойной удар! "
+    actual_damage = apply_class_abilities(attacker, logger)
 
-    elif attacker.char_class == 'cleric' and attacker.current_mana >= 10:
-        if (c_hel := (attacker.current_health + 20)) <= attacker.max_health:
-            attacker.current_mana -= 10
-            attacker.current_health = c_hel
-            log_message += "Клерик подлечился на 20 ХП перед атакой! "
-
-    """БРОНЯ ЦЕЛИ И РАСЧЕТ УРОНА"""
     damage_dealt = max(0, actual_damage - target.armour)
     target.current_health -= damage_dealt
+    logger.log_damage(attacker.id, target.id, damage_dealt)
 
-    log_message += f"Пользователь {data.id_self} нанес {damage_dealt} урона пользователю {data.id_target}. "
-
-    """МЕХАНИКА ОПЫТА"""
     is_killed = target.current_health <= 0
-    xp_log = await gain_xp(attacker, target, damage_dealt, is_killed)
-    log_message += f"Пользователь {data.id_self} нанес {damage_dealt} урона. {xp_log} "
+    await gain_xp(attacker, target, damage_dealt, is_killed, logger)
 
-    """МЕХАНИКА КОНТРАТАКИ"""
     if not is_killed:
-        counter_damage = max(0, target.damage - attacker.armour)
-        attacker.current_health -= counter_damage
-        log_message += f"Контратака на {counter_damage} урона! "
+        handle_counter_attack(attacker, target, logger)
     else:
-        log_message += f"Пользователь {data.id_target} пал в бою. "
+        logger.log_death(target.id)
 
-    await session.execute(
-        update(CharacterModel)
-        .where(CharacterModel.id == attacker.id)
-        .values(
-            current_health=attacker.current_health,
-            current_mana=attacker.current_mana,
-            experience=attacker.experience,
-            level=attacker.level,
-            damage=attacker.damage
-        )
-    )
-    await session.execute(
-        update(CharacterModel)
-        .where(CharacterModel.id == target.id)
-        .values(current_health=target.current_health, alive=(target.current_health > 0))
-    )
-
-    await session.commit()
-    return log_message
+    # Функция update_character_stats уже делает commit, который снимает блокировку
+    await update_character_stats(session, attacker, target)
+    
+    logger.log_final_health(attacker, target)
+    
+    return logger.get_full_log()
