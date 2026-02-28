@@ -3,14 +3,14 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
 
-from Schemas.CharacterSchema import CharacterAddSchema, CharacterDelete, CharacterReadSchema, CharacterModel, \
+from app.schemas.character_schema import CharacterAddSchema, CharacterDelete, CharacterReadSchema, CharacterModel, \
     Base, DamageData
-from battle.do_damage import do_damage
-from battle.heal_all import heal_all
-from battle.pve_battle import fight_creep
-from database.queries import get_character_by_id, remove_character_from_db, show_characters, add_character_to_db
+from app.battle.do_damage import do_damage
+from app.battle.heal import heal_all, heal_one
+from app.battle.pve_battle import fight_creep
+from app.database.queries import get_character_by_id, remove_character_from_db, show_characters, add_character_to_db
 
-engine = create_async_engine('sqlite+aiosqlite:///database/characters.db')
+engine = create_async_engine('sqlite+aiosqlite:///src/app/database/characters.db')
 
 new_session = async_sessionmaker(engine, expire_on_commit=False)
 
@@ -70,7 +70,7 @@ async def get_character(session: SessionDep, character_id: int):
 
 '''СРАЖЕНИЕ ДВУХ ИГРОКОВ'''
 @router_battle.post('/do_hit')
-async def battle(session: SessionDep, data: DamageData):
+async def battle(session: SessionDep, data: Annotated[DamageData, Depends()]):
     result = await do_damage(session, data)
     await session.commit() # Завершаем транзакцию здесь
     return result
@@ -81,6 +81,13 @@ async def battle(session: SessionDep, data: DamageData):
 async def heal_all_chars(session: SessionDep):
     await heal_all(session)
     return {'message': 'ALL HEALED'}
+
+
+'''ЗАЛЕЧИТЬ ОДНОГО'''
+@router_battle.post('/heal/{character_id}')
+async def heal_one_char(character_id: int, session: SessionDep):
+    await heal_one(session, character_id)
+    return f'Character {character_id} is healed'
 
 
 '''СРАЗИТЬСЯ С КРИПОМ'''

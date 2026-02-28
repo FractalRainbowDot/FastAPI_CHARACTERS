@@ -1,8 +1,8 @@
 from fastapi import HTTPException
-from Schemas.CharacterSchema import CharacterModel, DamageData
-from battle.lvl_up import gain_xp
-from battle.battle_logic import apply_class_abilities, handle_counter_attack, update_character_stats, are_characters_alive
-from battle.battle_logger import BattleLogger
+from app.schemas.character_schema import CharacterModel, DamageData
+from app.battle.lvl_up import gain_xp
+from app.battle.battle_logic import apply_class_abilities, handle_counter_attack, update_character_stats, are_characters_alive
+from app.battle.battle_logger import BattleLogger
 
 async def do_damage(session, data: DamageData):
     """Координирует бой между двумя персонажами с блокировкой строк для избежания race condition."""

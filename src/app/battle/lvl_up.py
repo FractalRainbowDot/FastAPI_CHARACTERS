@@ -1,5 +1,5 @@
-from Schemas.CharacterSchema import CharacterModel
-from battle.battle_logger import BattleLogger
+from app.schemas.character_schema import CharacterModel
+from app.battle.battle_logger import BattleLogger
 
 def _calculate_and_apply_xp(attacker: CharacterModel, target: CharacterModel, damage_dealt: int, target_killed: bool, logger: BattleLogger):
     """Рассчитывает и начисляет опыт."""

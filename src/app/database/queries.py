@@ -1,7 +1,7 @@
 from fastapi import HTTPException
 from sqlalchemy import func, select, delete
 
-from Schemas.CharacterSchema import CharacterModel
+from app.schemas.character_schema import CharacterModel
 
 
 async def hello_count_players(session):

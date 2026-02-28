@@ -1,7 +1,7 @@
 import random
 from sqlalchemy import update
-from Schemas.CharacterSchema import CharacterModel
-from battle.battle_logger import BattleLogger
+from app.schemas.character_schema import CharacterModel
+from app.battle.battle_logger import BattleLogger
 
 async def create_creep(session) -> CharacterModel:
     """Создает случайного крипа 'Огр' и сохраняет его в БД."""

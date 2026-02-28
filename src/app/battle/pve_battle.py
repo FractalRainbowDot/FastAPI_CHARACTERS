@@ -1,9 +1,12 @@
-from sqlalchemy.orm import Session
-from Schemas.CharacterSchema import CharacterModel, DamageData
-from battle.battle_logic import create_creep
-from battle.do_damage import do_damage
+from app.schemas.character_schema import DamageData
+from app.battle.battle_logic import create_creep
+from app.battle.do_damage import do_damage
 
-async def fight_creep(session: Session, attacker_id: int):
+async def fight_creep(session, attacker_id: int):
+    """
+    Координирует бой игрока со случайно созданным крипом.
+    Теперь эта функция также отвечает за commit транзакции.
+    """
     # 1. Создаем крипа
     creep = await create_creep(session)
     
@@ -15,10 +18,11 @@ async def fight_creep(session: Session, attacker_id: int):
     
     # 4. Проверяем состояние крипа. Объект creep все еще в сессии и его состояние актуально.
     if not creep.alive:
-        await session.delete(creep)
+        # Помечаем крипа для удаления (это синхронная операция)
+        session.delete(creep)
         battle_log += f" Огр повержен и его тело исчезает."
     
-    # 5. Завершаем транзакцию
+    # 5. Завершаем транзакцию (а вот это асинхронная операция)
     await session.commit()
         
     return battle_log

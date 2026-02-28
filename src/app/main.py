@@ -2,8 +2,8 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 
-from database.queries import hello_count_players, bye_count_players
-from routers.router import router_DB, router_battle, get_session
+from app.database.queries import hello_count_players, bye_count_players
+from app.routers.router import router_DB, router_battle, get_session
 
 
 @asynccontextmanager
