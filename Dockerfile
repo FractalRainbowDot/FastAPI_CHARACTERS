@@ -1,7 +1,15 @@
-FROM python:3.14
+# Используем официальный образ Python
+FROM python:3.11-slim
 
-COPY . .
+# Устанавливаем рабочую директорию
+WORKDIR /app
 
-RUN pip install -r requirements.txt
+# Копируем файл с зависимостями и устанавливаем их
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
 
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "80"]
+# Копируем исходный код приложения
+COPY ./src /app/src
+
+# Указываем команду для запуска приложения
+CMD ["uvicorn", "src.app.main:app", "--host", "0.0.0.0", "--port", "8000"]
