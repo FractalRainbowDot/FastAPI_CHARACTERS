@@ -3,12 +3,13 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 
 from app.database.queries import hello_count_players, bye_count_players
-from app.routers.router import router_DB, router_battle, get_session
+from app.database.session import get_player_session
+from app.routers.router import router_DB, router_battle
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    session_manager = asynccontextmanager(get_session)
+    session_manager = asynccontextmanager(get_player_session)
 
     print(f'{"Запуск приложения":-^100}')
     async with session_manager() as session:

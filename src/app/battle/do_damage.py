@@ -7,7 +7,7 @@ from app.battle.battle_logger import BattleLogger
 async def do_damage(session, data: DamageData):
     """Координирует бой между двумя персонажами с блокировкой строк для избежания race condition."""
     if data.id_self == data.id_target:
-        raise HTTPException(status_code=403, detail='Одумайся, роскомнадзорнуться на моем бэке не получится')
+        raise HTTPException(status_code=403, detail='Себя не трогай на публике')
 
     # БЛОКИРУЕМ строки атакующего и цели для эксклюзивного доступа
     attacker = await session.get(CharacterModel, data.id_self, with_for_update=True)
@@ -27,10 +27,10 @@ async def do_damage(session, data: DamageData):
 
     damage_dealt = max(0, actual_damage - target.armour)
     target.current_health -= damage_dealt
-    logger.log_damage(attacker.id, target.id, damage_dealt)
+    logger.log_damage_to_player(attacker.name, target.name, damage_dealt)
 
     is_killed = target.current_health <= 0
-    await gain_xp(attacker, target, damage_dealt, is_killed, logger)
+    await gain_xp(attacker=attacker, damage_dealt=damage_dealt, logger=logger)
 
     if not is_killed:
         handle_counter_attack(attacker, target, logger)

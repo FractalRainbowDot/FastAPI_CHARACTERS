@@ -1,28 +1,44 @@
-from app.schemas.character_schema import DamageData
-from app.battle.battle_logic import create_creep
-from app.battle.do_damage import do_damage
+from app.battle.battle_logger import BattleLogger
+from app.battle.battle_logic import apply_class_abilities, handle_counter_attack, update_character_stats
+from app.database.queries import get_npc_by_lvl, add_creep_to_db, update_npc_stats
+from app.schemas.character_schema import CharacterModel
+from app.battle.lvl_up import gain_xp
 
-async def fight_creep(session, attacker_id: int):
-    """
-    Координирует бой игрока со случайно созданным крипом.
-    Теперь эта функция также отвечает за commit транзакции.
-    """
-    # 1. Создаем крипа
-    creep = await create_creep(session)
+
+async def fight_creep(session_player, session_npc, attacker: CharacterModel, npc_level):
     
-    # 2. Создаем структуру данных для функции do_damage
-    damage_data = DamageData(id_self=attacker_id, id_target=creep.id)
+    target_npc = await get_npc_by_lvl(session=session_npc, npc_level=npc_level)
+    if not target_npc:
+        await add_creep_to_db(npc_level, session_npc)
+        target_npc = await get_npc_by_lvl(session=session_npc, npc_level=npc_level)
+
+    if target_npc.current_health <= 0:
+        target_npc.current_health = target_npc.max_health
+        await update_npc_stats(session_npc, target_npc)
+
+    logger = BattleLogger()
     
-    # 3. Проводим бой. do_damage больше не делает commit.
-    battle_log = await do_damage(session, damage_data)
+    # Атака игрока
+    attacker_actual_damage = apply_class_abilities(attacker, logger)
+    damage_dealt = max(0, attacker_actual_damage - target_npc.armour)
+    target_npc.current_health -= damage_dealt
+    logger.log_damage_to_player(attacker.name, target_npc.name, damage_dealt)
+
+    is_killed = target_npc.current_health <= 0
+    await gain_xp(attacker=attacker, damage_dealt=damage_dealt, logger=logger)
+
+    # Атака NPC
+    if not is_killed:
+        handle_counter_attack(attacker, target_npc, logger)
+    else:
+        logger.log_npc_death(target_npc.name)
+        await gain_xp(attacker=attacker, npc_death_reward=target_npc.exp_reward, logger=logger)
+
+
+    # Сохранение результатов
+    await update_character_stats(session_player, attacker, None)
+    await update_npc_stats(session_npc, target_npc)
     
-    # 4. Проверяем состояние крипа. Объект creep все еще в сессии и его состояние актуально.
-    if not creep.alive:
-        # Помечаем крипа для удаления (это синхронная операция)
-        session.delete(creep)
-        battle_log += f" Огр повержен и его тело исчезает."
+    logger.log_final_health(attacker, target_npc)
     
-    # 5. Завершаем транзакцию (а вот это асинхронная операция)
-    await session.commit()
-        
-    return battle_log
+    return logger.get_full_log()
