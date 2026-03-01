@@ -1,9 +1,11 @@
 """Координация ударов, расчет урона"""
+from src.models.battle import PvEData
 from src.repositories.character_repository import CharacterRepository
 from src.repositories.npc_repository import NpcRepository
 from src.services.npc_service import NpcService
 from src.services.battle_logger import BattleLogger
 from src.services.experience_service import ExperienceService
+from src.core.exceptions import NotFoundException, BadRequestException
 
 
 class BattleService:
@@ -44,14 +46,14 @@ class BattleService:
 
     async def pvp_battle(self, attacker_id: int, target_id: int) -> str:
         if attacker_id == target_id:
-            raise ValueError('Себя не трогай на публике')
+            raise BadRequestException('Себя не трогай на публике')
 
         # Запрашиваем с блокировкой строк (with_for_update)
         attacker = await self.char_repo.get_for_update(attacker_id)
         target = await self.char_repo.get_for_update(target_id)
 
         if not attacker or not target:
-            raise ValueError("Один из персонажей не найден")
+            raise NotFoundException("Один из персонажей")
 
         if message := self._are_characters_alive(attacker, target):
             return message
@@ -79,12 +81,12 @@ class BattleService:
         logger.log_final_health(attacker, target)
         return logger.get_full_log()
 
-    async def pve_battle(self, attacker_id: int, npc_level: int) -> str:
-        attacker = await self.char_repo.get_by_id(attacker_id)
+    async def pve_battle(self, data: PvEData) -> str:
+        attacker = await self.char_repo.get_by_id(data.attacker_id)
         if not attacker:
-            raise ValueError(f"Игрок с ID {attacker_id} не найден")
+            raise NotFoundException(f"Игрок с ID {data.attacker_id}")
 
-        target_npc = await self.npc_service.get_or_create_npc(npc_level)
+        target_npc = await self.npc_service.get_or_create_npc(data.npc_level)
 
         if message := self._are_characters_alive(attacker, target_npc):
             return message

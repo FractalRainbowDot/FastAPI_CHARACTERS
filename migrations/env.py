@@ -15,6 +15,7 @@ sys.path.append(os.path.join(os.getcwd(), 'src'))
 
 from src.db_models.character import CharacterModel
 from src.db_models.npc import NonPlayableCharacters
+from src.core.config import settings
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
@@ -40,6 +41,10 @@ target_metadata = {
 # can be acquired:
 # my_important_option = config.get_main_option("my_important_option")
 # ... etc.
+
+# Set database urls from settings
+config.set_section_option('players', 'sqlalchemy.url', settings.DB_PLAYER_URL)
+config.set_section_option('npcs', 'sqlalchemy.url', settings.DB_NPC_URL)
 
 
 def run_migrations_offline() -> None:

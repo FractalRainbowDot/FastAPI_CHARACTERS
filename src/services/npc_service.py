@@ -1,6 +1,7 @@
 """Логика генерации статов NPC"""
 from src.repositories.npc_repository import NpcRepository
 from src.db_models.npc import NonPlayableCharacters
+from src.core.exceptions import BadRequestException
 
 
 class NpcService:
@@ -9,7 +10,7 @@ class NpcService:
 
     async def get_or_create_npc(self, level: int) -> NonPlayableCharacters:
         if level < 1:
-            raise ValueError('Неправильный ввод уровня')
+            raise BadRequestException('Неправильный ввод уровня')
 
         npc = await self.repo.get_by_level(level)
 

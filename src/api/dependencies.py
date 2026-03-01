@@ -7,6 +7,7 @@ from src.repositories.npc_repository import NpcRepository
 from src.services.character_service import CharacterService
 from src.services.npc_service import NpcService
 from src.services.battle_service import BattleService
+from src.services.database_service import DatabaseService
 
 
 def get_character_service(session: AsyncSession = Depends(get_player_session)) -> CharacterService:
@@ -25,3 +26,6 @@ def get_battle_service(
         CharacterRepository(player_session),
         NpcRepository(npc_session)
     )
+
+def get_database_service() -> DatabaseService:
+    return DatabaseService()

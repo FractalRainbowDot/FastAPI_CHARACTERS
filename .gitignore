@@ -11,4 +11,3 @@ pip-delete-this-directory.txt
 .buildpath
 archive/
 src/core/data/
-src/core/data/NonPlayableCharacters.db

@@ -2,6 +2,7 @@
 from src.repositories.character_repository import CharacterRepository
 from src.db_models.character import CharacterModel
 from src.models.character import CharacterAddSchema
+from src.core.exceptions import NotFoundException
 
 
 class CharacterService:
@@ -28,7 +29,7 @@ class CharacterService:
     async def heal_one(self, character_id: int) -> CharacterModel:
         char = await self.repo.get_by_id(character_id)
         if not char:
-            raise ValueError(f"Персонаж с ID {character_id} не найден")
+            raise NotFoundException(f"Персонаж с ID {character_id}")
 
         char.current_health = char.max_health
         char.current_mana = char.max_mana
@@ -41,5 +42,5 @@ class CharacterService:
     async def delete_character(self, character_id: int) -> str:
         success = await self.repo.delete(character_id)
         if not success:
-            raise ValueError('Такого персонажа нет')
+            raise NotFoundException('Такого персонажа нет')
         return f'Пользователь с ID {character_id} удалён'
