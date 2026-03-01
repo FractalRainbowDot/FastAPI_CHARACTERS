@@ -10,3 +10,4 @@ pip-delete-this-directory.txt
 .toast
 .buildpath
 archive/
+src/core/data/
