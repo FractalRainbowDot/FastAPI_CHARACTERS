@@ -10,9 +10,12 @@ from alembic import context
 """MY DATABASE"""
 import sys
 import os
-sys.path.append(os.getcwd())
+sys.path.append(os.path.join(os.getcwd(), 'src'))
 
-from Schemas.CharacterSchema import Base
+from app_v2.db_models.base import Base
+from app_v2.db_models.character import CharacterModel
+from app_v2.db_models.npc import NonPlayableCharacters
+
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
