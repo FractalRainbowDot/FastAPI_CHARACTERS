@@ -45,3 +45,80 @@ API предоставляет следующие возможности:
 *   **`db_models/`**: Модели SQLAlchemy для работы с базой данных.
 *   **`repositories/`**: Классы для взаимодействия с базой данных.
 *   **`main.py`**: Точка входа в приложение FastAPI.
+
+## 🏗 Архитектура проекта
+Проект построен по принципам Чистой Архитектуры (Clean Architecture) и разделен на независимые слои:
+
+```mermaid
+graph TD
+    Client([Клиент / HTTP Запросы HTTP])
+
+    subgraph "Слой API (api/v1/endpoints/)"
+        RouterC[Characters Router<br>/characters]
+        RouterB[Battle Router<br>/battle]
+        RouterN[NPCs Router<br>/npcs]
+    end
+
+    subgraph "Слой Валидации (models/)"
+        PydanticC[Схемы Игроков<br>Pydantic]
+        PydanticB[Схемы Боя<br>Pydantic]
+        PydanticN[Схемы NPC<br>Pydantic]
+    end
+
+    subgraph "Слой Бизнес-логики (services/)"
+        ServC[Character Service]
+        ServB[Battle Service]
+        ServN[NPC Service]
+        ServE[Experience Service]
+        Logger[Battle Logger]
+    end
+
+    subgraph "Слой Данных (repositories/)"
+        RepoC[Character Repository]
+        RepoN[NPC Repository]
+    end
+
+    subgraph "Инфраструктура (core/ & db_models/)"
+        ModelC[Character DB Model<br>SQLAlchemy]
+        ModelN[NPC DB Model<br>SQLAlchemy]
+        DB[(SQLite Базы данных)]
+    end
+
+    Client ==> RouterC
+    Client ==> RouterB
+    Client ==> RouterN
+
+    RouterC -.->|Валидирует| PydanticC
+    RouterB -.->|Валидирует| PydanticB
+    RouterN -.->|Валидирует| PydanticN
+
+    RouterC ===>|Вызывает| ServC
+    RouterB ===>|Вызывает| ServB
+    RouterN ===>|Вызывает| ServN
+
+    ServB -.->|Начисляет опыт| ServE
+    ServB -.->|Записывает логи| Logger
+    ServB -.->|Получает крипов| ServN
+
+    ServC ===>|Запрашивает| RepoC
+    ServB ===>|Запрашивает| RepoC
+    ServB ===>|Запрашивает| RepoN
+    ServN ===>|Запрашивает| RepoN
+
+    RepoC -.->|Использует| ModelC
+    RepoN -.->|Использует| ModelN
+
+    RepoC ===>|SQL| DB
+    RepoN ===>|SQL| DB
+
+    classDef api fill:#e1f5fe,stroke:#03a9f4,stroke-width:2px;
+    classDef service fill:#e8f5e9,stroke:#4caf50,stroke-width:2px;
+    classDef repo fill:#fff3e0,stroke:#ff9800,stroke-width:2px;
+    classDef db fill:#eceff1,stroke:#607d8b,stroke-width:2px;
+    classDef model fill:#f3e5f5,stroke:#9c27b0,stroke-width:2px,stroke-dasharray: 5 5;
+
+    class RouterC,RouterB,RouterN api;
+    class ServC,ServB,ServN,ServE,Logger service;
+    class RepoC,RepoN repo;
+    class DB,ModelC,ModelN db;
+    class PydanticC,PydanticB,PydanticN model;

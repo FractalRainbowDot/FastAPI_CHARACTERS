@@ -1,7 +1,7 @@
 """Запросы к таблице NonPlayableCharacters"""
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from app_v2.db_models.npc import NonPlayableCharacters
+from src.db_models.npc import NonPlayableCharacters
 
 
 class NpcRepository:

@@ -1,6 +1,6 @@
 """Логика генерации статов NPC"""
-from app_v2.repositories.npc_repository import NpcRepository
-from app_v2.db_models.npc import NonPlayableCharacters
+from src.repositories.npc_repository import NpcRepository
+from src.db_models.npc import NonPlayableCharacters
 
 
 class NpcService:

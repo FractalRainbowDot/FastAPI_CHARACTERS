@@ -4,6 +4,7 @@ from logging.config import fileConfig
 from sqlalchemy import pool
 from sqlalchemy.engine import Connection
 from sqlalchemy.ext.asyncio import async_engine_from_config
+from sqlalchemy.orm import declarative_base
 
 from alembic import context
 
@@ -12,10 +13,8 @@ import sys
 import os
 sys.path.append(os.path.join(os.getcwd(), 'src'))
 
-from app_v2.db_models.base import Base
-from app_v2.db_models.character import CharacterModel
-from app_v2.db_models.npc import NonPlayableCharacters
-
+from src.db_models.character import CharacterModel
+from src.db_models.npc import NonPlayableCharacters
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
@@ -30,7 +29,12 @@ if config.config_file_name is not None:
 # for 'autogenerate' support
 # from myapp import mymodel
 # target_metadata = mymodel.Base.metadata
-target_metadata = Base.metadata
+Base = declarative_base()
+
+target_metadata = {
+    'players': CharacterModel.metadata,
+    'npcs': NonPlayableCharacters.metadata
+}
 
 # other values from the config, defined by the needs of env.py,
 # can be acquired:
@@ -50,23 +54,35 @@ def run_migrations_offline() -> None:
     script output.
 
     """
-    url = config.get_main_option("sqlalchemy.url")
+    # This is the Alembic Config object, which provides
+    # access to the values within the .ini file in use.
+    config = context.config
+
+    # This line sets up loggers basically.
+    if config.config_file_name is not None:
+        fileConfig(config.config_file_name)
+
+    # for the --sql use case, run migrations for each URL into
+    # a separate script.
+    for name, url in config.get_section('alembic:databases').items():
+        context.configure(
+            url=url,
+            target_metadata=target_metadata.get(name),
+            literal_binds=True,
+            dialect_opts={"paramstyle": "named"},
+        )
+        with context.begin_transaction():
+            context.run_migrations(name)
+
+
+def do_run_migrations(connection: Connection, name: str) -> None:
     context.configure(
-        url=url,
-        target_metadata=target_metadata,
-        literal_binds=True,
-        dialect_opts={"paramstyle": "named"},
+        connection=connection,
+        target_metadata=target_metadata.get(name)
     )
 
     with context.begin_transaction():
-        context.run_migrations()
-
-
-def do_run_migrations(connection: Connection) -> None:
-    context.configure(connection=connection, target_metadata=target_metadata)
-
-    with context.begin_transaction():
-        context.run_migrations()
+        context.run_migrations(name)
 
 
 async def run_async_migrations() -> None:
@@ -75,16 +91,30 @@ async def run_async_migrations() -> None:
 
     """
 
-    connectable = async_engine_from_config(
-        config.get_section(config.config_ini_section, {}),
-        prefix="sqlalchemy.",
-        poolclass=pool.NullPool,
-    )
+    # This is the Alembic Config object, which provides
+    # access to the values within the .ini file in use.
+    config = context.config
 
-    async with connectable.connect() as connection:
-        await connection.run_sync(do_run_migrations)
+    # This line sets up loggers basically.
+    if config.config_file_name is not None:
+        fileConfig(config.config_file_name)
 
-    await connectable.dispose()
+    # for the direct-to-DB use case, start a transaction on all
+    # engines, then run all migrations, then commit all transactions.
+    engines = {}
+    for name, url in config.get_section('alembic:databases').items():
+        engines[name] = async_engine_from_config(
+            {'sqlalchemy.url': url},
+            prefix="sqlalchemy.",
+            poolclass=pool.NullPool,
+        )
+
+    for name, engine in engines.items():
+        async with engine.connect() as connection:
+            await connection.run_sync(do_run_migrations, name)
+
+    for engine in engines.values():
+        await engine.dispose()
 
 
 def run_migrations_online() -> None:

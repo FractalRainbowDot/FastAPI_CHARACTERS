@@ -1,9 +1,9 @@
 """Координация ударов, расчет урона"""
-from app_v2.repositories.character_repository import CharacterRepository
-from app_v2.repositories.npc_repository import NpcRepository
-from app_v2.services.npc_service import NpcService
-from app_v2.services.battle_logger import BattleLogger
-from app_v2.services.experience_service import ExperienceService
+from src.repositories.character_repository import CharacterRepository
+from src.repositories.npc_repository import NpcRepository
+from src.services.npc_service import NpcService
+from src.services.battle_logger import BattleLogger
+from src.services.experience_service import ExperienceService
 
 
 class BattleService:

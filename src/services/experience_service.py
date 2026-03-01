@@ -1,5 +1,5 @@
 """Логика начисления опыта и Level Up"""
-from app_v2.services.battle_logger import BattleLogger
+from src.services.battle_logger import BattleLogger
 
 
 class ExperienceService:

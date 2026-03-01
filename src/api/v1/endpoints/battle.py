@@ -1,9 +1,9 @@
 """Эндпоинты боев и лечения"""
 from fastapi import APIRouter, Depends, HTTPException
-from app_v2.models.battle import DamageData
-from app_v2.services.battle_service import BattleService
-from app_v2.services.character_service import CharacterService
-from app_v2.api.dependencies import get_battle_service, get_character_service
+from src.models.battle import DamageData
+from src.services.battle_service import BattleService
+from src.services.character_service import CharacterService
+from src.api.dependencies import get_battle_service, get_character_service
 
 router = APIRouter(prefix="/battle", tags=["Battle"])
 

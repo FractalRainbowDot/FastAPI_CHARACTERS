@@ -1,7 +1,7 @@
 """Логика создания/удаления персонажей"""
-from app_v2.repositories.character_repository import CharacterRepository
-from app_v2.db_models.character import CharacterModel
-from app_v2.models.character import CharacterAddSchema
+from src.repositories.character_repository import CharacterRepository
+from src.db_models.character import CharacterModel
+from src.models.character import CharacterAddSchema
 
 
 class CharacterService:

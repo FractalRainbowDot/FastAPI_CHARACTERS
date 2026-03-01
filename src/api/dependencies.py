@@ -1,12 +1,12 @@
 from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app_v2.core.database import get_player_session, get_npc_session
-from app_v2.repositories.character_repository import CharacterRepository
-from app_v2.repositories.npc_repository import NpcRepository
-from app_v2.services.character_service import CharacterService
-from app_v2.services.npc_service import NpcService
-from app_v2.services.battle_service import BattleService
+from src.core.database import get_player_session, get_npc_session
+from src.repositories.character_repository import CharacterRepository
+from src.repositories.npc_repository import NpcRepository
+from src.services.character_service import CharacterService
+from src.services.npc_service import NpcService
+from src.services.battle_service import BattleService
 
 
 def get_character_service(session: AsyncSession = Depends(get_player_session)) -> CharacterService:

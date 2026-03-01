@@ -1,8 +1,8 @@
 """Эндпоинты NPC"""
 from fastapi import APIRouter, Depends, HTTPException
-from app_v2.models.npc import NpcReadSchema
-from app_v2.services.npc_service import NpcService
-from app_v2.api.dependencies import get_npc_service
+from src.models.npc import NpcReadSchema
+from src.services.npc_service import NpcService
+from src.api.dependencies import get_npc_service
 
 router = APIRouter(prefix="/npcs", tags=["NPCs"])
 

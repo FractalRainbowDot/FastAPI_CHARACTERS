@@ -1,9 +1,9 @@
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 
-from app_v2.api.v1.router import api_router
-from app_v2.core.database import player_session_maker
-from app_v2.repositories.character_repository import CharacterRepository
+from .api.v1.router import api_router
+from .core.database import player_session_maker
+from .repositories.character_repository import CharacterRepository
 
 
 @asynccontextmanager

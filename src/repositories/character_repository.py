@@ -1,7 +1,7 @@
 """Запросы к таблице characters"""
 from sqlalchemy import select, func, update, delete
 from sqlalchemy.ext.asyncio import AsyncSession
-from app_v2.db_models.character import CharacterModel
+from src.db_models.character import CharacterModel
 
 
 class CharacterRepository:

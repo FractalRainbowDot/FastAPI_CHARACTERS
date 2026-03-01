@@ -1,8 +1,8 @@
 """Эндпоинты игроков"""
 from fastapi import APIRouter, Depends, HTTPException
-from app_v2.models.character import CharacterAddSchema, CharacterReadSchema, CharacterDelete
-from app_v2.services.character_service import CharacterService
-from app_v2.api.dependencies import get_character_service
+from src.models.character import CharacterAddSchema, CharacterReadSchema, CharacterDelete
+from src.services.character_service import CharacterService
+from src.api.dependencies import get_character_service
 
 router = APIRouter(prefix="/characters", tags=["Characters"])
 
